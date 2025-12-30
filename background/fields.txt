@@ -1,0 +1,485 @@
+# Fields
+
+A fundamental component of many cryptographic protocols is the algebraic structure known
+as a [field]. Fields are sets of objects (usually numbers) with two associated binary
+operators $+$ and $\times$ such that various [field axioms][field-axioms] hold. The real
+numbers $\mathbb{R}$ are an example of a field with uncountably many elements.
+
+[field]: https://en.wikipedia.org/wiki/Field_(mathematics)
+[field-axioms]: https://en.wikipedia.org/wiki/Field_(mathematics)#Classic_definition
+
+Halo makes use of _finite fields_ which have a finite number of elements. Finite fields
+are fully classified as follows:
+
+- if $\mathbb{F}$ is a finite field, it contains $|\mathbb{F}| = p^k$ elements for some
+  integer $k \geq 1$ and some prime $p$;
+- any two finite fields with the same number of elements are isomorphic. In particular,
+  all of the arithmetic in a prime field $\mathbb{F}_p$ is isomorphic to addition and
+  multiplication of integers modulo $p$, i.e. in $\mathbb{Z}_p$. This is why we often
+  refer to $p$ as the _modulus_.
+
+We'll write a field as $\mathbb{F}_q$ where $q = p^k$. The prime $p$ is called its
+_characteristic_. In the cases where $k \gt 1$ the field $\mathbb{F}_q$ is a $k$-degree
+extension of the field $\mathbb{F}_p$. (By analogy, the complex numbers
+$\mathbb{C} = \mathbb{R}(i)$ are an extension of the real numbers.) However, in Halo we do
+not use extension fields. Whenever we write $\mathbb{F}_p$ we are referring to what
+we call a _prime field_ which has a prime $p$ number of elements, i.e. $k = 1$.
+
+Important notes:
+
+* There are two special elements in any field: $0$, the additive identity, and
+  $1$, the multiplicative identity.
+* The least significant bit of a field element, when represented as an integer in binary
+  format, can be interpreted as its "sign" to help distinguish it from its additive
+  inverse (negation). This is because for some nonzero element $a$ which has a least
+  significant bit $0$ we have that $-a = p - a$ has a least significant bit $1$, and vice
+  versa. We could also use whether or not an element is larger than $(p - 1) / 2$ to give
+  it a "sign."
+
+Finite fields will be useful later for constructing [polynomials](polynomials.md) and
+[elliptic curves](curves.md). Elliptic curves are examples of groups, which we discuss
+next.
+
+## Groups
+
+Groups are simpler and more limited than fields; they have only one binary operator $\cdot$
+and fewer axioms. They also have an identity, which we'll denote as $1$.
+
+[group]: https://en.wikipedia.org/wiki/Group_(mathematics)
+[group-axioms]: https://en.wikipedia.org/wiki/Group_(mathematics)#Definition
+
+Any non-zero element $a$ in a group has an _inverse_ $b = a^{-1}$,
+which is the _unique_ element $b$ such that $a \cdot b = 1$.
+     
+For example, the set of nonzero elements of $\mathbb{F}_p$ forms a group, where the
+group operation is given by multiplication on the field.
+
+[group]: https://en.wikipedia.org/wiki/Group_(mathematics)
+
+> #### (aside) Additive vs multiplicative notation 
+> If $\cdot$ is written as $\times$ or omitted (i.e. $a \cdot b$ written as $ab$), the
+> identity as $1$, and inversion as $a^{-1}$, as we did above, then we say that the group
+> is "written multiplicatively". If $\cdot$ is written as $+$, the identity as $0$ or
+> $\mathcal{O}$, and inversion as $-a$, then we say it is "written additively".
+>
+> It's conventional to use additive notation for elliptic curve groups, and multiplicative
+> notation when the elements come from a finite field.
+>
+> When additive notation is used, we also write
+>
+> $$[k] A = \underbrace{A + A + \cdots + A}_{k \text{ times}}$$
+>
+> for nonnegative $k$ and call this "scalar multiplication"; we also often use uppercase
+> letters for variables denoting group elements. When multiplicative notation is used, we
+> also write
+>
+> $$a^k = \underbrace{a \times a \times \cdots \times a}_{k \text{ times}}$$
+>
+> and call this "exponentiation". In either case we call the scalar $k$ such that
+> $[k] g = a$ or $g^k = a$ the "discrete logarithm" of $a$ to base $g$. We can extend
+> scalars to negative integers by inversion, i.e. $[-k] A + [k] A = \mathcal{O}$ or
+> $a^{-k} \times a^k = 1$.
+
+The _order_ of an element $a$ of a finite group is defined as the smallest positive integer
+$k$ such that $a^k = 1$ (in multiplicative notation) or $[k] a = \mathcal{O}$ (in additive
+notation). The order _of the group_ is the number of elements.
+
+Groups always have a [generating set], which is a set of elements such that we can produce
+any element of the group as (in multiplicative terminology) a product of powers of those
+elements. So if the generating set is $g_{1..k}$, we can produce any element of the group
+as $\prod\limits_{i=1}^{k} g_i^{a_i}$. There can be many different generating sets for a
+given group.
+
+[generating set]: https://en.wikipedia.org/wiki/Generating_set_of_a_group
+
+A group is called [cyclic] if it has a (not necessarily unique) generating set with only
+a single element — call it $g$. In that case we can say that $g$ generates the group, and
+that the order of $g$ is the order of the group.
+
+Any finite cyclic group $\mathbb{G}$ of order $n$ is [isomorphic] to the integers
+modulo $n$ (denoted $\mathbb{Z}/n\mathbb{Z}$), such that:
+
+- the operation $\cdot$ in $\mathbb{G}$ corresponds to addition modulo $n$;
+- the identity in $\mathbb{G}$ corresponds to $0$;
+- some generator $g \in \mathbb{G}$ corresponds to $1$.
+
+Given a generator $g$, the isomorphism is always easy to compute in the
+$\mathbb{Z}/n\mathbb{Z} \rightarrow \mathbb{G}$ direction; it is just $a \mapsto g^a$
+(or in additive notation, $a \mapsto [a] g$).
+It may be difficult in general to compute in the $\mathbb{G} \rightarrow \mathbb{Z}/n\mathbb{Z}$
+direction; we'll discuss this further when we come to [elliptic curves](curves.md).
+
+If the order $n$ of a finite group is prime, then the group is cyclic, and every
+non-identity element is a generator.
+
+[isomorphic]: https://en.wikipedia.org/wiki/Isomorphism
+[cyclic]: https://en.wikipedia.org/wiki/Cyclic_group
+
+### The multiplicative group of a finite field
+
+We use the notation $\mathbb{F}_p^\times$ for the multiplicative group (i.e. the group
+operation is multiplication in $\mathbb{F}_p$) over the set $\mathbb{F}_p - \{0\}$.
+
+A quick way of obtaining the inverse in $\mathbb{F}_p^\times$ is $a^{-1} = a^{p - 2}$.
+The reason for this stems from [Fermat's little theorem][fermat-little], which states
+that $a^p = a \pmod p$ for any integer $a$. If $a$ is nonzero, we can divide by $a$ twice
+to get $a^{p-2} = a^{-1}.$
+
+[fermat-little]: https://en.wikipedia.org/wiki/Fermat%27s_little_theorem
+
+Let's assume that $\alpha$ is a generator of $\mathbb{F}_p^\times$, so it has order $p-1$
+(equal to the number of elements in $\mathbb{F}_p^\times$). Therefore, for any element in
+$a \in \mathbb{F}_p^\times$ there is a unique integer $i \in \{0..p-2\}$ such that $a = \alpha^i$.
+
+Notice that $a \times b$ where $a, b \in \mathbb{F}_p^\times$ can really be interpreted as
+$\alpha^i \times \alpha^j$ where $a = \alpha^i$ and $b = \alpha^j$. Indeed, it holds that
+$\alpha^i \times \alpha^j = \alpha^{i + j}$ for all $0 \leq i, j \lt p - 1$. As a result
+the multiplication of nonzero field elements can be interpreted as addition modulo $p - 1$
+with respect to some fixed generator $\alpha$. The addition just happens "in the exponent."
+
+This is another way to look at where $a^{p - 2}$ comes from for computing inverses in the
+field:
+
+$$p - 2 \equiv -1 \pmod{p - 1},$$
+
+so $a^{p - 2} = a^{-1}$.
+
+### Montgomery's Trick
+
+Montgomery's trick, named after Peter Montgomery (RIP) is a way to compute many group
+inversions at the same time. It is commonly used to compute inversions in
+$\mathbb{F}_p^\times$, which are quite computationally expensive compared to multiplication.
+
+Imagine we need to compute the inverses of three nonzero elements $a, b, c \in \mathbb{F}_p^\times$.
+Instead, we'll compute the products $x = ab$ and $y = xc = abc$, and compute the inversion
+
+$$z = y^{p - 2} = \frac{1}{abc}.$$
+
+We can now multiply $z$ by $x$ to obtain $\frac{1}{c}$ and multiply $z$ by $c$ to obtain
+$\frac{1}{ab}$, which we can then multiply by $a, b$ to obtain their respective inverses.
+
+This technique generalizes to arbitrary numbers of group elements with just a single
+inversion necessary.
+
+## Multiplicative subgroups
+
+A _subgroup_ of a group $G$ with operation $\cdot$, is a subset of elements of $G$ that
+also form a group under $\cdot$.
+
+In the previous section we said that $\alpha$ is a generator of the $(p - 1)$-order
+multiplicative group $\mathbb{F}_p^\times$. This group has _composite_ order, and so by
+the Chinese remainder theorem[^chinese-remainder] it has strict subgroups. As an example
+let's imagine that $p = 11$, and so $p - 1$ factors into $5 \cdot 2$. Thus, there is a
+generator $\beta$ of the $5$-order subgroup and a generator $\gamma$ of the $2$-order
+subgroup. All elements in $\mathbb{F}_p^\times$, therefore, can be written uniquely as
+$\beta^i \cdot \gamma^j$ for some $i$ (modulo $5$) and some $j$ (modulo $2$).
+
+If we have $a = \beta^i \cdot \gamma^j$ notice what happens when we compute
+
+$$
+a^5 = (\beta^i \cdot \gamma^j)^5
+    = \beta^{i \cdot 5} \cdot \gamma^{j \cdot 5}
+    = \beta^0 \cdot \gamma^{j \cdot 5}
+    = \gamma^{j \cdot 5};
+$$
+
+we have effectively "killed" the $5$-order subgroup component, producing a value in the
+$2$-order subgroup.
+
+[Lagrange's theorem (group theory)][lagrange-group] states that the order of any subgroup
+$H$ of a finite group $G$ divides the order of $G$. Therefore, the order of any subgroup
+of $\mathbb{F}_p^\times$ must divide $p-1.$
+
+[lagrange-group]: https://en.wikipedia.org/wiki/Lagrange%27s_theorem_(group_theory)
+
+[PLONK-based] proving systems like Halo 2 are more convenient to use with fields that have
+a large number of multiplicative subgroups with a "smooth" distribution (which makes the
+performance cliffs smaller and more granular as circuit sizes increase). The Pallas and
+Vesta curves specifically have primes of the form
+
+$$T \cdot 2^S = p - 1$$
+
+with $S = 32$ and $T$ odd (i.e. $p - 1$ has 32 lower zero-bits). This means they have
+multiplicative subgroups of order $2^k$ for all $k \leq 32$. These 2-adic subgroups are
+nice for [efficient FFTs], as well as enabling a wide variety of circuit sizes.
+
+[PLONK-based]: plonkish.md
+[efficient FFTs]: polynomials.md#fast-fourier-transform-fft
+
+## Square roots
+
+In a field $\mathbb{F}_p$ exactly half of all nonzero elements are squares; the remainder
+are non-squares or "quadratic non-residues". In order to see why, consider an $\alpha$
+that generates the $2$-order multiplicative subgroup of $\mathbb{F}_p^\times$ (this exists
+because $p - 1$ is divisible by $2$ since $p$ is a prime greater than $2$) and $\beta$ that
+generates the $t$-order multiplicative subgroup of $\mathbb{F}_p^\times$ where $p - 1 = 2t$.
+Then every element $a \in \mathbb{F}_p^\times$ can be written uniquely as
+$\alpha^i \cdot \beta^j$ with $i \in \mathbb{Z}_2$ and $j \in \mathbb{Z}_t$. Half of all
+elements will have $i = 0$ and the other half will have $i = 1$.
+
+Let's consider the simple case where $p \equiv 3 \pmod{4}$ and so $t$ is odd (if $t$ is
+even, then $p - 1$ would be divisible by $4$, which contradicts $p$ being $3 \pmod{4}$).
+If $a \in \mathbb{F}_p^\times$ is a square, then there must exist
+$b = \alpha^i \cdot \beta^j$ such that $b^2 = a$. But this means that
+
+$$a = (\alpha^i \cdot \beta^j)^2 = \alpha^{2i} \cdot \beta^{2j} = \beta^{2j}.$$
+
+In other words, all squares in this particular field do not generate the $2$-order
+multiplicative subgroup, and so since half of the elements generate the $2$-order subgroup
+then at most half of the elements are square. In fact exactly half of the elements are
+square (since squaring each nonsquare element gives a unique square). This means we can
+assume all squares can be written as $\beta^m$ for some $m$, and therefore finding the
+square root is a matter of exponentiating by $2^{-1} \pmod{t}$.
+
+In the event that $p \equiv 1 \pmod{4}$ then things get more complicated because
+$2^{-1} \pmod{t}$ does not exist. Let's write $p - 1$ as $2^k \cdot t$ with $t$ odd. The
+case $k = 0$ is impossible, and the case $k = 1$ is what we already described, so consider
+$k \geq 2$. $\alpha$ generates a $2^k$-order multiplicative subgroup and $\beta$ generates
+the odd $t$-order multiplicative subgroup. Then every element $a \in \mathbb{F}_p^\times$
+can be written as $\alpha^i \cdot \beta^j$ for $i \in \mathbb{Z}_{2^k}$ and
+$j \in \mathbb{Z}_t$. If the element is a square, then there exists some $b = \sqrt{a}$
+which can be written $b = \alpha^{i'} \cdot \beta^{j'}$ for $i' \in \mathbb{Z}_{2^k}$ and
+$j' \in \mathbb{Z}_t$. This means that $a = b^2 = \alpha^{2i'} \cdot \beta^{2j'}$,
+therefore we have $i \equiv 2i' \pmod{2^k}$, and $j \equiv 2j' \pmod{t}$. $i$ would have
+to be even in this case because otherwise it would be impossible to have
+$i \equiv 2i' \pmod{2^k}$ for any $i'$. In the case that $a$ is not a square, then $i$ is
+odd, and so half of all elements are squares.
+
+In order to compute the square root, we can first raise the element
+$a = \alpha^i \cdot  \beta^j$ to the power $t$ to "kill" the $t$-order component, giving
+
+$$a^t = \alpha^{it \pmod {2^k}} \cdot \beta^{jt \pmod t} = \alpha^{it \pmod {2^k}}$$
+
+and then raise this result to the power $t^{-1} \pmod{2^k}$ to undo the effect of the
+original exponentiation on the $2^k$-order component:
+
+$$(\alpha^{it \bmod 2^k})^{t^{-1} \pmod{2^k}} = \alpha^i$$
+
+(since $t$ is relatively prime to $2^k$). This leaves bare the $\alpha^i$ value which we
+can trivially handle. We can similarly kill the $2^k$-order component to obtain
+$\beta^{j \cdot 2^{-1} \pmod{t}}$, and put the values together to obtain the square root.
+
+It turns out that in the cases $k = 2, 3$ there are simpler algorithms that merge several
+of these exponentiations together for efficiency. For other values of $k$, the only known
+way is to manually extract $i$ by squaring until you obtain the identity for every single
+bit of $i$. This is the essence of the [Tonelli-Shanks square root algorithm][ts-sqrt] and
+describes the general strategy. (There is another square root algorithm that uses
+quadratic extension fields, but it doesn't pay off in efficiency until the prime becomes
+quite large.)
+
+[ts-sqrt]: https://en.wikipedia.org/wiki/Tonelli%E2%80%93Shanks_algorithm
+
+## Roots of unity
+
+In the previous sections we wrote $p - 1 = 2^k \cdot t$ with $t$ odd, and stated that an
+element $\alpha \in \mathbb{F}_p^\times$ generated the $2^k$-order subgroup. For
+convenience, let's denote $n := 2^k.$ The elements $\{1, \alpha, \ldots, \alpha^{n-1}\}$
+are known as the $n$th [roots of unity](https://en.wikipedia.org/wiki/Root_of_unity).
+
+The **primitive root of unity**, $\omega,$ is an $n$th root of unity such that
+$\omega^i \neq 1$ except when $i \equiv 0 \pmod{n}$.
+
+Important notes:
+
+- If $\alpha$ is an $n$th root of unity, $\alpha$ satisfies $\alpha^n - 1 = 0.$ If
+  $\alpha \neq 1,$ then
+  $$1 + \alpha + \alpha^2 + \cdots + \alpha^{n-1} = 0.$$
+- Equivalently, the roots of unity are solutions to the equation
+  $$X^n - 1 = (X - 1)(X - \alpha)(X - \alpha^2) \cdots (X - \alpha^{n-1}).$$
+- **$\boxed{\omega^{\frac{n}{2}+i} =  -\omega^i}$ ("Negation lemma")**. Proof:
+  $$
+  \begin{aligned}
+  \omega^n = 1 &\implies \omega^n - 1 = 0 \\
+  &\implies (\omega^{n/2} + 1)(\omega^{n/2} - 1) = 0.
+  \end{aligned}
+  $$
+  Since the order of $\omega$ is $n$, $\omega^{n/2} \neq 1.$ Therefore, $\omega^{n/2} = -1.$
+
+- **$\boxed{(\omega^{\frac{n}{2}+i})^2 =  (\omega^i)^2}$ ("Halving lemma")**. Proof:
+  $$
+  (\omega^{\frac{n}{2}+i})^2 = \omega^{n + 2i} = \omega^{n} \cdot \omega^{2i} = \omega^{2i} = (\omega^i)^2.
+  $$
+  In other words, if we square each element in the $n$th roots of unity, we would get back
+  only half the elements, $\{(\omega_n^i)^2\} = \{\omega_{n/2}\}$ (i.e. the $\frac{n}{2}$th roots
+  of unity). There is a two-to-one mapping between the elements and their squares.
+
+## References
+[^chinese-remainder]: [Friedman, R. (n.d.) "Cyclic Groups and Elementary Number Theory II" (p. 5).](http://www.math.columbia.edu/~rf/numbertheory2.pdf)
+
+
+# 域 (Fields)
+
+许多密码学协议的基础组件是一种被称为[域][field]的代数结构。域是具有两个关联二元运算符$+$和$\times$的对象集合（通常是数字），满足各种[域公理][field-axioms]。实数$\mathbb{R}$是一个具有不可数多元素的域示例。
+
+[field]: https://en.wikipedia.org/wiki/Field_(mathematics)
+[field-axioms]: https://en.wikipedia.org/wiki/Field_(mathematics)#Classic_definition
+
+Halo使用具有有限元素的**有限域**。有限域可完全分类如下：
+
+- 若$\mathbb{F}$是有限域，则它包含$|\mathbb{F}| = p^k$个元素，其中$p$是素数，$k \geq 1$是整数；
+- 任何两个具有相同元素数量的有限域都是同构的。特别地，素域$\mathbb{F}_p$中的算术运算同构于模$p$的整数加减乘除（即$\mathbb{Z}_p$）。因此我们常称$p$为**模数**。
+
+我们将域写作$\mathbb{F}_q$，其中$q = p^k$。素数$p$称为域的**特征**。当$k > 1$时，域$\mathbb{F}_q$是$\mathbb{F}_p$的$k$次扩张（类比复数$\mathbb{C} = \mathbb{R}(i)$是实数的扩张）。但在Halo中我们不使用扩张域。当写$\mathbb{F}_p$时，我们特指元素数量为素数$p$的**素域**​（即$k = 1$）。
+
+重要说明：
+
+* 任何域中有两个特殊元素：加法单位元$0$和乘法单位元$1$。
+* 当域元素以二进制格式表示为整数时，其最低有效位（LSB）可解释为"符号"，以区分其加法逆元（负元）。因为对于最低有效位为$0$的非零元素$a$，其负元$-a = p - a$的最低有效位为$1$，反之亦然。我们也可以用元素是否大于$(p - 1)/2$来赋予其"符号"。
+
+有限域在构建[多项式](polynomials.md)和[椭圆曲线](curves.md)时非常有用。椭圆曲线是群的例子，接下来我们讨论群。
+
+## 群 (Groups)
+
+群比域更简单且限制更多，它只有一个二元运算符$\cdot$和更少的公理。群也有单位元，我们记为$1$。
+
+[group]: https://en.wikipedia.org/wiki/Group_(mathematics)
+[group-axioms]: https://en.wikipedia.org/wiki/Group_(mathematics)#Definition
+
+群中任何非零元素$a$都有**逆元**$b = a^{-1}$，即满足$a \cdot b = 1$的唯一元素$b$。
+
+例如，$\mathbb{F}_p$的非零元素集合在域的乘法运算下构成群。
+
+> #### （旁注）加法记法与乘法记法
+> 若将$\cdot$写作$\times$或省略（如将$a \cdot b$写作$ab$），单位元记为$1$，逆运算写作$a^{-1}$，则称群为"乘法记法"。若$\cdot$写作$+$，单位元记为$0$或$\mathcal{O}$，逆运算写作$-a$，则称为"加法记法"。
+>
+> 椭圆曲线群通常用加法记法，而元素来自有限域时用乘法记法。
+>
+> 使用加法记法时，我们写作：
+> $$[k] A = \underbrace{A + A + \cdots + A}_{k \text{次}}$$
+> 其中$k$为非负数，称为"标量乘法"。使用乘法记法时，写作：
+> $$a^k = \underbrace{a \times a \times \cdots \times a}_{k \text{次}}$$
+> 称为"指数运算"。若存在标量$k$使得$[k] g = a$或$g^k = a$，则称$k$为$a$以$g$为底的**离散对数**。可通过逆运算将标量扩展到负整数，即$[-k] A + [k] A = \mathcal{O}$或$a^{-k} \times a^k = 1$。
+
+有限群中元素$a$的**阶**定义为满足$a^k = 1$（乘法记法）或$[k] a = \mathcal{O}$（加法记法）的最小正整数$k$。群的阶是其元素数量。
+
+群总有[生成集][generating set]，即能通过生成元的幂次乘积生成群中所有元素的集合。若生成集为$g_{1..k}$，则任何群元素可表示为$\prod\limits_{i=1}^{k} g_i^{a_i}$。一个群可能有多个不同的生成集。
+
+[generating set]: https://en.wikipedia.org/wiki/Generating_set_of_a_group
+
+若群有单个元素$g$作为生成集（不必唯一），则称该群为[循环群][cyclic]。此时称$g$生成该群，且$g$的阶等于群的阶。
+
+[cyclic]: https://en.wikipedia.org/wiki/Cyclic_group
+
+任何$n$阶有限循环群$\mathbb{G}$都[同构][isomorphic]于模$n$整数群$\mathbb{Z}/n\mathbb{Z}$，其中：
+
+- $\mathbb{G}$中的运算$\cdot$对应模$n$加法；
+- $\mathbb{G}$中的单位元对应$0$；
+- 某个生成元$g \in \mathbb{G}$对应$1$。
+
+[isomorphic]: https://en.wikipedia.org/wiki/Isomorphism
+
+给定生成元$g$，同构映射$\mathbb{Z}/n\mathbb{Z} \rightarrow \mathbb{G}$方向易计算（即$a \mapsto g^a$或$a \mapsto [a] g$），但$\mathbb{G} \rightarrow \mathbb{Z}/n\mathbb{Z}$方向可能困难，这将在讨论[椭圆曲线](curves.md)时进一步解释。
+
+若有限群的阶$n$为素数，则该群是循环群，且所有非单位元元素都是生成元。
+
+### 有限域的乘法群
+
+我们用$\mathbb{F}_p^\times$表示$\mathbb{F}_p - \{0\}$上的乘法群（群运算是$\mathbb{F}_p$的乘法）。
+
+在$\mathbb{F}_p^\times$中求逆元的高效方法是$a^{-1} = a^{p - 2}$，这源于[费马小定理][fermat-little]：对任何整数$a$有$a^p \equiv a \pmod{p}$。若$a$非零，两边除以$a^2$可得$a^{p-2} \equiv a^{-1} \pmod{p}$。
+
+[fermat-little]: https://en.wikipedia.org/wiki/Fermat%27s_little_theorem
+
+假设$\alpha$是$\mathbb{F}_p^\times$的生成元，其阶为$p-1$。因此，对任何$a \in \mathbb{F}_p^\times$，存在唯一整数$i \in \{0..p-2\}$使得$a = \alpha^i$。
+
+注意到$a \times b$（$a, b \in \mathbb{F}_p^\times$）可解释为$\alpha^i \times \alpha^j$（设$a = \alpha^i$, $b = \alpha^j$），即$\alpha^{i+j}$。因此，非零域元素的乘法可视为关于固定生成元$\alpha$的模$p-1$加法，但运算发生在指数上。
+
+这也解释了为何$a^{p-2}$能用于求逆：因为$p - 2 \equiv -1 \pmod{p - 1}$，故$a^{p - 2} = a^{-1}$。
+
+### Montgomery技巧
+
+Montgomery技巧（以Peter Montgomery命名）用于同时计算多个群逆元。常被用于$\mathbb{F}_p^\times$中计算逆元，相比乘法运算，求逆计算量较大。
+
+假设需要计算三个非零元素$a, b, c \in \mathbb{F}_p^\times$的逆元。我们可先计算乘积$x = ab$和$y = xc = abc$，然后计算逆元：
+
+$$z = y^{p - 2} = \frac{1}{abc}.$$
+
+将$z$乘以$x$得到$\frac{1}{c}$，乘以$c$得到$\frac{1}{ab}$，再分别乘以$a,b$即可得到各自的逆元。此方法可推广至任意数量的群元素，只需一次求逆。
+
+## 乘法子群
+
+群的**子群**是群$G$的一个子集，其在原群运算下也构成群。
+
+$\mathbb{F}_p^\times$是一个$p-1$阶乘法群。由于$p-1$是合数，根据中国剩余定理[^chinese-remainder]，它有严格的子群。例如当$p=11$时，$p-1=5 \cdot 2$，故存在5阶子群（生成元$\beta$）和2阶子群（生成元$\gamma$）。$\mathbb{F}_p^\times$中所有元素可唯一表示为$\beta^i \cdot \gamma^j$（$i$模5，$j$模2）。
+
+对于$a = \beta^i \cdot \gamma^j$，计算$a^5$会消去5阶子群成分，得到2阶子群中的值：
+
+$$a^5 = (\beta^i \cdot \gamma^j)^5 = \beta^{5i} \cdot \gamma^{5j} = \gamma^{5j}.$$
+
+[拉格朗日定理][lagrange-group]指出：有限群$G$的子群$H$的阶必整除$G$的阶。因此，$\mathbb{F}_p^\times$的任何子群的阶必整除$p-1$。
+
+[lagrange-group]: https://en.wikipedia.org/wiki/Lagrange%27s_theorem_(group_theory)
+
+基于[PLONK][PLONK-based]的证明系统（如Halo 2）在使用具有大量"平滑"分布的乘法子群的域时更方便。Pallas和Vesta曲线的素数形式为：
+
+$$T \cdot 2^S = p - 1$$
+
+其中$S=32$，$T$为奇数（即$p-1$低32位为0）。这意味着它们具有$2^k$（$k \leq 32$）阶的乘法子群。这些2-adic子群有利于[高效FFT][efficient FFTs]并支持多种电路规模。
+
+[PLONK-based]: plonkish.md
+[efficient FFTs]: polynomials.md#fast-fourier-transform-fft
+
+## 平方根
+
+在域 $\mathbb{F}_p$ 中，恰好有一半的非零元素是平方数（二次剩余），其余为非平方数（二次非剩余）。理解此现象需要分析域的结构：
+
+### 子群分解
+设 $\alpha$ 生成 $\mathbb{F}_p^\times$ 的 2 阶乘法子群（存在性由 $p-1$ 可被 2 整除保证），$\beta$ 生成 t 阶子群（其中 $p - 1 = 2t$）。每个元素 $a \in \mathbb{F}_p^\times$ 可唯一表示为：
+$$a = \alpha^i \cdot \beta^j \quad (i \in \mathbb{Z}_2,\ j \in \mathbb{Z}_t)$$
+- 当 $i=0$ 时，元素属于平方数集合
+- 当 $i=1$ 时，元素属于非平方数集合
+
+### 特例分析 ($p \equiv 3 \pmod{4}$)
+此时 $t$ 为奇数，平方数形式为：
+$$a = \beta^{2j}$$
+平方根计算简化为指数运算：
+$$\sqrt{a} = \beta^{j} = a^{2^{-1} \pmod{t}}$$
+
+### 一般情况 ($p \equiv 1 \pmod{4}$)
+将 $p-1$ 分解为 $2^k \cdot t$（$t$ 为奇数）。元素表示为：
+$$a = \alpha^i \cdot \beta^j \quad (i \in \mathbb{Z}_{2^k},\ j \in \mathbb{Z}_t)$$
+平方条件要求 $i$ 必须为偶数，此时使用 Tonelli-Shanks 算法：
+
+1. ​**消去 t 阶分量**  
+   $$a^t = \alpha^{it \pmod{2^k}}$$
+2. ​**恢复指数**  
+   $$(\alpha^{it})^{t^{-1} \pmod{2^k}} = \alpha^i$$
+3. ​**计算平方根**  
+   $$\sqrt{a} = \alpha^{i/2} \cdot \beta^{j \cdot 2^{-1} \pmod{t}}$$
+
+[Tonelli-Shanks 算法][ts-sqrt] 通过逐位提取 $i$ 的值实现高效计算。
+
+[ts-sqrt]: https://zh.wikipedia.org/wiki/Tonelli-Shanks算法
+
+## 单位根
+
+### 基本定义
+将 $p-1$ 分解为 $2^k \cdot t$，设 $\alpha$ 生成 $2^k$ 阶子群，则集合 $\{1, \alpha, ..., \alpha^{2^k-1}\}$ 称为 ​**$2^k$ 次单位根**。
+
+### 关键性质
+1. ​**本原单位根**  
+   若 $\omega$ 满足 $\omega^i \neq 1$（$i \not\equiv 0 \pmod{2^k}$），则称 $\omega$ 为本原单位根。
+
+2. ​**求和公式**  
+   对任意 $n$ 次单位根 $\alpha \neq 1$：
+   $$1 + \alpha + \alpha^2 + \cdots + \alpha^{n-1} = 0$$
+
+3. ​**分解式**  
+   $$X^n - 1 = (X - 1)(X - \alpha)(X - \alpha^2)\cdots(X - \alpha^{n-1})$$
+
+### 重要引理
+1. ​**负元引理**  
+   $$\omega^{n/2 + i} = -\omega^i$$  
+   ​**证明**：  
+   $$\omega^{n/2} = -1 \Rightarrow \omega^{n/2 + i} = \omega^{n/2} \cdot \omega^i = -\omega^i$$
+
+2. ​**折半引理**  
+   $$(\omega^{n/2 + i})^2 = (\omega^i)^2$$  
+   ​**证明**：  
+   $$\omega^{n/2 + i} = -\omega^i \Rightarrow (\omega^{n/2 + i})^2 = (\omega^i)^2$$
+
+### 几何解释
+单位根在复平面上均匀分布于单位圆，平方运算将每对共轭点映射到同一位置，形成二对一映射关系。
+
+## 参考文献
+[^chinese-remainder]: [Friedman, R. 《循环群与初等数论 II》第5页](http://www.math.columbia.edu/~rf/numbertheory2.pdf)
